@@ -1,0 +1,8 @@
+{"Animal":"Logrus","level":"info","msg":"A logrus appears","time":"2020-05-01T14:17:09+07:00"}
+time="2020-05-01T14:17:45+07:00" level=info msg="A logrus appears" Animal=Logrus
+time="2020-05-01T14:18:13+07:00" level=info msg="A logrus appears" Animal=Logrus
+time="2020-05-01T14:18:13+07:00" level=warning msg="The group's number increased tremendously!" number=122 omg=true
+time="2020-05-01T14:19:11+07:00" level=info msg="A logrus appears" Animal=Logrus
+time="2020-05-01T14:19:11+07:00" level=warning msg="The group's number increased tremendously!" number=122 omg=true
+time="2020-05-01T14:20:01+07:00" level=info msg="A logrus appears" Animal=Logrus
+time="2020-05-01T14:20:01+07:00" level=warning msg="The group's number increased tremendously!" number=122 omg=true
