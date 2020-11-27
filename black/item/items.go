@@ -1,9 +1,9 @@
 package black
 
 var (
-	Items = 2
+	Items = 22
 )
 
 func init() {
-	Items = 4
+	Items := 4
 }
