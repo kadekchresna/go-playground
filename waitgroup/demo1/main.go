@@ -21,6 +21,7 @@ func foo() <-chan int {
 		wg.Done()
 
 	}()
+	wg.Wait()
 
 	go func() {
 		wg.Wait()
