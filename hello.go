@@ -9,6 +9,7 @@ import (
 
 func main() {
 	fmt.Printf("olla, soi doraa~\n")
+	fmt.Printf("olla, soi doraa~\n")
 	fmt.Printf("%v\n", black.Items)
 
 	c := car.NewCar().Wheels(car.SportsWheels).TopSpeed(50 * car.MPH).Build()
