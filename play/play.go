@@ -6,16 +6,16 @@ import (
 	"log"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	tutorial "github.com/kadekchresna/playground/src"
+	tutorial "play.init/src"
 )
 
 func main() {
 	t := tutorial.Person{
 		Name:        "k",
 		Id:          3,
-		LastUpdated: *timestamp.Timestamp{Seconds: 300, Nanos: 30},
+		LastUpdated: &timestamppb.Timestamp{Seconds: 300, Nanos: 30},
 		Username:    "k@k",
 		Phones:      []*tutorial.Person_PhoneNumber{{Number: "1212323", Type: tutorial.Person_WORK}, {Number: "12352222222", Type: tutorial.Person_HOME}},
 	}

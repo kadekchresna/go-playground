@@ -5,5 +5,5 @@ var (
 )
 
 func init() {
-	Items := 4
+	Items = 4
 }

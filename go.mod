@@ -9,5 +9,6 @@ require (
 	github.com/golang/protobuf v1.4.3
 	github.com/joho/godotenv v1.3.0
 	github.com/pkg/errors v0.9.1
+	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/kadekchrisna/playground/black"
+	black "play.init/black/item"
 )
 
 func main() {
