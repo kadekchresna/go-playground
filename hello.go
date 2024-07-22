@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/kadekchrisna/playground/black"
-	"github.com/kadekchrisna/playground/design-pattern/builder/car"
+	black "play.init/black/item"
+	"play.init/design-pattern/builder/car"
 )
 
 func main() {
