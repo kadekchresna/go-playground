@@ -8,6 +8,7 @@ import (
 	"basic.web/config"
 	driver_db "basic.web/driver/db"
 	"basic.web/helper/logger"
+	orderRepo "basic.web/internal/repository/orders"
 	settlementsRepo "basic.web/internal/repository/settlements"
 	settlementsUc "basic.web/internal/usecase/settlements"
 	v1 "basic.web/internal/web/v1"
@@ -55,9 +56,10 @@ func run() {
 
 	//repo
 	settlementsRepos := settlementsRepo.NewSettlementRepo(db)
+	orderRepos := orderRepo.NewOrderRepo(db)
 
 	//usecase
-	settlementsUsecase := settlementsUc.NewSettlementsUsecase(settlementsRepos)
+	settlementsUsecase := settlementsUc.NewSettlementsUsecase(settlementsRepos, orderRepos)
 
 	//handler
 	settlementsHandler := settlementsHandler.NewSettlementsHandler(settlementsUsecase)

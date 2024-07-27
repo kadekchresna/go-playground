@@ -26,3 +26,13 @@ func (h *settlementsHandler) GetSettlements(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "success", "data": GetSettlementsResponse{ID: s.ID, Code: s.Code, TotalAmount: s.TotalAmount, CreatedAt: s.CreatedAt}})
 }
+
+func (h *settlementsHandler) GetOrders(c echo.Context) error {
+	ctx := c.Request().Context()
+	orders, err := h.SettlementsUsecase.GetOrders(ctx, settlements.GetAllOrdersParams{})
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{"success": false, "message": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "success", "data": orders})
+}
