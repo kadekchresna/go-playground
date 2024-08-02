@@ -1,0 +1,155 @@
+# Setup deployment
+# Setup Service
+# Expose Service > minikube service <SERVICE_NAME>
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basic-web
+  namespace: default
+  labels:
+    app: basic-web
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: basic-web
+  template:
+    metadata:
+      labels:
+        app: basic-web
+    spec:
+      hostNetwork: true
+      containers:  
+      - name: basic-web
+        image: kadekchresna/basic-web
+        resources:
+          limits:
+            memory: "16Mi"
+            cpu: "10m"
+        ports:
+        - containerPort: 8080
+        command:
+          - "basic-web"
+          - "web"
+        env:
+          - name: "APP_ENV"
+            value: "uat"
+          - name: "APP_NAME"
+            value: "basic"
+          - name: "APP_PORT"
+            value: "8080"
+          - name: "DB_DSN"
+            # value: "postgresql://postgres:root@db-basic-web-service.default.svc.cluster.local:30081/postgres?sslmode=disable"
+            value: "postgresql://postgres:root@host.minikube.internal:5432/postgres?sslmode=disable"
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: postgres-connection-test
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: postgres-test
+#   template:
+#     metadata:
+#       labels:
+#         app: postgres-test
+#     spec:
+#       hostNetwork: true
+#       containers:
+#       - name: postgres-test
+#         image: alpine
+#         command: ["/bin/sh", "-c"]
+#         resources:
+#           limits:
+#             memory: "1218Mi"
+#             cpu: "100m"
+#         args:
+#         - |
+#           apk add --no-cache postgresql-client
+#           while true; do
+#             PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "SELECT 1" && echo "Connection successful" || echo "Connection failed"
+#             sleep 10
+#           done
+#         env:
+#         - name: DB_HOST
+#           value: "host.minikube.internal"
+#         - name: DB_PORT
+#           value: "5432"
+#         - name: DB_NAME
+#           value: "postgres"
+#         - name: DB_USER
+#           value: "postgres"
+#         - name: DB_PASSWORD
+#           value: "root"
+
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: db-basic-web
+#   namespace: default
+#   labels:
+#     app: db-basic-web
+# spec:
+#   replicas: 1
+#   strategy:
+#     type: Recreate
+#   selector:
+#     matchLabels:
+#       app: db-basic-web
+#   template:
+#     metadata:
+#       labels:
+#         app: db-basic-web
+#     spec:
+#       containers:
+#       - name: db-basic-web
+#         image: postgres
+#         resources:
+#           limits:
+#             memory: "128Mi"
+#             cpu: "500m"
+#         ports:
+#         - containerPort: 5432
+#         env:
+#           - name: "POSTGRES_PASSWORD"
+#             value: "root"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: basic-web-service
+  namespace: default
+spec:
+  ports:
+  - protocol: TCP
+    nodePort: 30080
+    port: 80
+    targetPort: 8080
+  selector:
+    app: basic-web
+  type: NodePort
+
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: db-basic-web-service
+#   namespace: default
+# spec:
+#   ports:
+#   - nodePort: 30081
+#     port: 5432
+#     targetPort: 5432
+#   selector:
+#     app: db-basic-web
+#   type: NodePort

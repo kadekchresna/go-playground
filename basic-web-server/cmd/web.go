@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"basic.web/config"
 	driver_db "basic.web/driver/db"
@@ -20,9 +21,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	STAGING     = `stg`
+	PRODUCTIOON = `prd`
+)
+
 func init() {
-	// init invoke env before everything
-	cobra.OnInitialize(initConfig)
+	if os.Getenv("APP_ENV") != PRODUCTIOON {
+
+		// init invoke env before everything
+		cobra.OnInitialize(initConfig)
+
+	}
 
 	// adding command invokable
 	rootCmd.AddCommand(versionCmd)
@@ -72,10 +82,10 @@ func run() {
 		//ReadTimeout: 30 * time.Second, // customize http.Server timeouts
 	}
 
-	logger.Log(logger.LoggerConfig{}).Log.Info(fmt.Sprintf("%s service started...", config.AppName))
+	logger.Log().Info(fmt.Sprintf("%s service started...", config.AppName))
 	if err := s.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 
-	logger.Log(logger.LoggerConfig{}).Log.Info(fmt.Sprintf("%s service finished", config.AppName))
+	logger.Log().Info(fmt.Sprintf("%s service finished", config.AppName))
 }

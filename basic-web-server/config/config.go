@@ -9,6 +9,7 @@ import (
 type Config struct {
 	AppName string
 	AppPort int
+	AppEnv  string
 
 	DatabaseDSN      string
 	DatabaseName     string
@@ -21,6 +22,7 @@ type Config struct {
 func InitConfig() Config {
 	return Config{
 		AppName: os.Getenv("APP_NAME"),
+		AppEnv:  os.Getenv("APP_ENV"),
 		AppPort: env.GetEnvInt("APP_PORT"),
 
 		DatabaseDSN:      os.Getenv("DB_DSN"),

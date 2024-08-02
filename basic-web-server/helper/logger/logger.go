@@ -1,9 +1,13 @@
 package logger
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 var (
-	cfg zap.Config
+	cfg    zap.Config
+	logger *zap.Logger
 )
 
 type LoggerConfig struct {
@@ -14,16 +18,25 @@ type Logger struct {
 	Log *zap.Logger
 }
 
-func Log(cfg LoggerConfig) Logger {
+func init() {
 
-	config := zap.Config{
-		Level:            zap.NewAtomicLevel(),
-		Encoding:         "json",
-		ErrorOutputPaths: []string{"stderr"},
+	cfg := zap.Config{
+		Level:       zap.NewAtomicLevelAt(zapcore.DebugLevel),
+		Encoding:    "json",
+		OutputPaths: []string{"stdout"},
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey:  "message",
+			LevelKey:    "level",
+			EncodeLevel: zapcore.LowercaseLevelEncoder,
+		},
 	}
-	logger := zap.Must(config.Build())
-	defer logger.Sync()
 
-	return Logger{Log: logger}
+	logger = zap.Must(cfg.Build())
+	defer logger.Sync()
+}
+
+func Log() *zap.Logger {
+
+	return logger
 
 }
