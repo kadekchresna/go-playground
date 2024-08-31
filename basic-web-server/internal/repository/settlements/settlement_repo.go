@@ -16,10 +16,10 @@ func NewSettlementRepo(DB *gorm.DB) SettlementsRepo {
 	}
 }
 
-func (r *settlementsRepo) GetSettlements(ctx context.Context, params GetSettlementsParams) (*Settlements, error) {
-	res := &Settlements{}
+func (r *settlementsRepo) GetSettlements(ctx context.Context, params GetSettlementsParams) ([]Settlements, error) {
+	res := []Settlements{}
 
-	if err := r.DB.Find(res).Error; err != nil {
+	if err := r.DB.Find(&res).Error; err != nil {
 		return nil, err
 	}
 

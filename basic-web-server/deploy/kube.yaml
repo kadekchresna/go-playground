@@ -20,6 +20,7 @@ spec:
     metadata:
       labels:
         app: basic-web
+        service: testing
     spec:
       hostNetwork: true
       containers:  
@@ -27,10 +28,18 @@ spec:
         image: kadekchresna/basic-web
         resources:
           limits:
-            memory: "16Mi"
-            cpu: "10m"
+            # memory: "16Mi"
+            # cpu: "10m"
+            memory: "64Mi"
+            cpu: "100m"
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
         ports:
         - containerPort: 8080
+          name: basic-web-port
+        - containerPort: 6060
+          name: basic-web-pprof
         command:
           - "basic-web"
           - "web"
@@ -44,83 +53,10 @@ spec:
           - name: "DB_DSN"
             # value: "postgresql://postgres:root@db-basic-web-service.default.svc.cluster.local:30081/postgres?sslmode=disable"
             value: "postgresql://postgres:root@host.minikube.internal:5432/postgres?sslmode=disable"
-
-# ---
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: postgres-connection-test
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: postgres-test
-#   template:
-#     metadata:
-#       labels:
-#         app: postgres-test
-#     spec:
-#       hostNetwork: true
-#       containers:
-#       - name: postgres-test
-#         image: alpine
-#         command: ["/bin/sh", "-c"]
-#         resources:
-#           limits:
-#             memory: "1218Mi"
-#             cpu: "100m"
-#         args:
-#         - |
-#           apk add --no-cache postgresql-client
-#           while true; do
-#             PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "SELECT 1" && echo "Connection successful" || echo "Connection failed"
-#             sleep 10
-#           done
-#         env:
-#         - name: DB_HOST
-#           value: "host.minikube.internal"
-#         - name: DB_PORT
-#           value: "5432"
-#         - name: DB_NAME
-#           value: "postgres"
-#         - name: DB_USER
-#           value: "postgres"
-#         - name: DB_PASSWORD
-#           value: "root"
-
-
-# ---
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: db-basic-web
-#   namespace: default
-#   labels:
-#     app: db-basic-web
-# spec:
-#   replicas: 1
-#   strategy:
-#     type: Recreate
-#   selector:
-#     matchLabels:
-#       app: db-basic-web
-#   template:
-#     metadata:
-#       labels:
-#         app: db-basic-web
-#     spec:
-#       containers:
-#       - name: db-basic-web
-#         image: postgres
-#         resources:
-#           limits:
-#             memory: "128Mi"
-#             cpu: "500m"
-#         ports:
-#         - containerPort: 5432
-#         env:
-#           - name: "POSTGRES_PASSWORD"
-#             value: "root"
+          - name: "PROMETHEUS_MONITORING_ENABLED"
+            value: "true"
+          # - name: "GOMEMLIMIT"
+          #   value: "64MiB"
 
 ---
 apiVersion: v1
@@ -134,22 +70,285 @@ spec:
     nodePort: 30080
     port: 80
     targetPort: 8080
+    name: basic-web
+  - protocol: TCP
+    nodePort: 30060
+    port: 6060
+    targetPort: 6060
+    name: basic-web-pprof
   selector:
     app: basic-web
   type: NodePort
 
 
-# ---
+# MONITORING
+# GRAFANA
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+spec:
+  selector:
+    app: grafana
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 3000
+    nodePort: 30081
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  labels:
+    app: prometheus-demo
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+    scrape_configs:
+    # #------------- configuration to collect pods metrics -------------------
+    - job_name: 'kubernetes-pods'
+      honor_labels: true
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      # select only those pods that has "prometheus.io/scrape: true" annotation
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      # set metrics_path (default is /metrics) to the metrics path specified in "prometheus.io/path: <metric path>" annotation.
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      # set the scrapping port to the port specified in "prometheus.io/port: <port>" annotation and set address accordingly.
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+
+    # #-------------- configuration to collect metrics from service endpoints -----------------------
+    # - job_name: 'kubernetes-service-endpoints'
+    #   honor_labels: true
+    #   kubernetes_sd_configs:
+    #   - role: endpoints
+    #   relabel_configs:
+    #   # select only those endpoints whose service has "prometheus.io/scrape: true" annotation
+    #   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+    #     action: keep
+    #     regex: true
+    #   # set the metrics_path to the path specified in "prometheus.io/path: <metric path>" annotation.
+    #   - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+    #     action: replace
+    #     target_label: __metrics_path__
+    #     regex: (.+)
+    #   # set the scrapping port to the port specified in "prometheus.io/port: <port>" annotation and set address accordingly.
+    #   - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+    #     action: replace
+    #     target_label: __address__
+    #     regex: ([^:]+)(?::\d+)?;(\d+)
+    #     replacement: $1:$2
+    #   - action: labelmap
+    #     regex: __meta_kubernetes_service_label_(.+)
+    #   - source_labels: [__meta_kubernetes_namespace]
+    #     action: replace
+    #     target_label: kubernetes_namespace
+    #   - source_labels: [__meta_kubernetes_service_name]
+    #     action: replace
+    #     target_label: kubernetes_name
+
+    # #---------------- configuration to collect metrics from kubernetes apiserver -------------------------
+    # - job_name: 'kubernetes-apiservers'
+    #   honor_labels: true
+    #   kubernetes_sd_configs:
+    #   - role: endpoints
+    #   # kubernetes apiserver serve metrics on a TLS secure endpoints. so, we have to use "https" scheme
+    #   scheme: https
+    #   # we have to provide certificate to establish tls secure connection
+    #   tls_config:
+    #     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    #   #  bearer_token_file is required for authorizating prometheus server to kubernetes apiserver
+    #   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+    #   relabel_configs:
+    #   - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+    #     action: keep
+    #     regex: default;kubernetes;https
+
+    # #--------------- configuration to collect metrics from nodes -----------------------
+    # - job_name: 'kubernetes-nodes'
+    #   honor_labels: true
+    #   scheme: https
+    #   tls_config:
+    #     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    #   bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+    #   kubernetes_sd_configs:
+    #   - role: node
+    #   relabel_configs:
+    #   - action: labelmap
+    #     regex: __meta_kubernetes_node_label_(.+)
+    #   - target_label: __address__
+    #     replacement: kubernetes.default.svc:443
+    #   - source_labels: [__meta_kubernetes_node_name]
+    #     regex: (.+)
+    #     target_label: __metrics_path__
+    #     replacement: /api/v1/nodes/${1}/proxy/metrics
+    #--------------- configuration to collect metrics from nodes -----------------------
+    - job_name: 'node_exporter'
+      static_configs:
+        - targets: ['node-exporter.default.svc.cluster.local:9100']
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus-demo
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus-demo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus-demo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: default
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.20.1
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--storage.tsdb.path=/prometheus/"
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus/
+        - name: prometheus-storage
+          mountPath: /prometheus/
+      volumes:
+      - name: prometheus-config
+        configMap:
+          defaultMode: 420
+          name: prometheus-config
+      - name: prometheus-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prom-service
+spec:
+  selector:
+    app: prometheus
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 9090
+    nodePort: 30090
+
+---
+
 # apiVersion: v1
-# kind: Service
+# kind: Pod
 # metadata:
-#   name: db-basic-web-service
-#   namespace: default
+#   name: pod-monitoring-demo
+#   labels:
+#     app: prometheus-demo
+#   annotations:
+#     prometheus.io/scrape: "true"
+#     prometheus.io/port: "9091"
+#     prometheus.io/path: "/metrics"
 # spec:
-#   ports:
-#   - nodePort: 30081
-#     port: 5432
-#     targetPort: 5432
-#   selector:
-#     app: db-basic-web
-#   type: NodePort
+#   containers:
+#   - name: pushgateway
+#     image: prom/pushgateway

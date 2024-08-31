@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"basic.web/config"
@@ -15,6 +16,7 @@ import (
 	v1 "basic.web/internal/web/v1"
 	settlementsHandler "basic.web/internal/web/v1/settlements"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -76,6 +78,20 @@ func run() {
 
 	v1.InitAPI(e, settlementsHandler)
 
+	e.Any("/metrics", echo.WrapHandler(promhttp.Handler()))
+
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
+
+	// Register all the standard library debug endpoints.
+	// curl --output pprofile "localhost:8080/debug/pprof/profile?seconds=10
+	// go tool pprof -http localhost:3435 pprofile
+	// e.Any("/debug/pprof/", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
+	// e.Any("/debug/pprof/cmdline", echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
+	// e.Any("/debug/pprof/profile", echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
+	// e.Any("/debug/pprof/symbol", echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
+	// e.Any("/debug/pprof/trace", echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
 	s := http.Server{
 		Addr:    fmt.Sprintf(":%d", config.AppPort),
 		Handler: e,

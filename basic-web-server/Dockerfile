@@ -31,6 +31,8 @@ RUN chmod +x /usr/local/bin/basic-web
 
 WORKDIR /usr/local/bin
 
+ENV GODEBUG=gctrace=1
+
 ENTRYPOINT ["basic-web"]
 
 CMD [ "web" ]

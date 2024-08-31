@@ -24,13 +24,27 @@ func NewSettlementsUsecase(
 	}
 }
 
-func (u *settlementsUsecase) GetSettlements(ctx context.Context, params GetSettlementsParams) (*model.Settlements, error) {
+func (u *settlementsUsecase) GetSettlements(ctx context.Context, params GetSettlementsParams) ([]model.Settlements, error) {
 	settlements, err := u.SettlementsRepo.GetSettlements(ctx, settlements.GetSettlementsParams{})
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.Settlements{ID: settlements.ID, Code: settlements.Code, TotalAmount: settlements.TotalAmount, CreatedAt: time.Now()}, nil
+	res := []model.Settlements{}
+	for _, s := range settlements {
+		res = append(res, model.Settlements{ID: s.ID, Code: s.Code, TotalAmount: s.TotalAmount, CreatedAt: time.Now()})
+	}
+
+	return res, nil
+}
+
+func (u *settlementsUsecase) GetSettlementsOne(ctx context.Context, params GetSettlementsParams) (*model.Settlements, error) {
+	settlements, err := u.SettlementsRepo.GetSettlements(ctx, settlements.GetSettlementsParams{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Settlements{ID: settlements[0].ID, Code: settlements[0].Code, TotalAmount: settlements[0].TotalAmount, CreatedAt: time.Now()}, nil
 }
 
 func (u *settlementsUsecase) GetOrders(ctx context.Context, params GetAllOrdersParams) ([]model.Order, error) {

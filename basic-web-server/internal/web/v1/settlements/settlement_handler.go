@@ -24,7 +24,7 @@ func (h *settlementsHandler) GetSettlements(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]interface{}{"success": false, "message": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "success", "data": GetSettlementsResponse{ID: s.ID, Code: s.Code, TotalAmount: s.TotalAmount, CreatedAt: s.CreatedAt}})
+	return c.JSON(http.StatusOK, map[string]interface{}{"success": true, "message": "success", "data": s})
 }
 
 func (h *settlementsHandler) GetOrders(c echo.Context) error {
