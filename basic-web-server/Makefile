@@ -23,13 +23,24 @@ docker-run:
 	docker run -d --env-file .env kadekchresna/basic-web:latest
 
 make-profile: 
-	curl --output profile.out "localhost:6060/debug/pprof/profile?seconds=30"
+	curl -o profile.out "http://127.0.0.1:50218/debug/pprof/profile?seconds=30"
 
 make-heap: 
-	curl "http://127.0.0.1:55854/debug/pprof/heap?seconds=15" > heap
+	curl -o heap.out http://localhost:8080/debug/pprof/heap
 
 run-heap:
 	go tool pprof -http=:3435 heap
 
 run-profile:
 	go tool pprof -http=:3435 pprofile
+
+run-postgres:
+	docker run -d \
+	--name basic-postgres \
+	-e POSTGRES_USER=postgres \
+	-e POSTGRES_PASSWORD=root \
+	-e POSTGRES_DB=postgres \
+	-v /Users/kuro/project/golang/go-playground/basic-web-server/deploy/data:/var/lib/postgresql/data \
+	-p 5432:5432 \
+	postgres:latest
+
