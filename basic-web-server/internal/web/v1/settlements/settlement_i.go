@@ -6,4 +6,5 @@ type SettlementsHandler interface {
 	GetSettlements(c echo.Context) error
 
 	GetOrders(c echo.Context) error
+	CreateJob(c echo.Context) error
 }
