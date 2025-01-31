@@ -96,3 +96,181 @@ func (u *settlementsUsecase) GetOrders(ctx context.Context, params GetAllOrdersP
 
 	return res, nil
 }
+
+func (u *settlementsUsecase) GetLogs(ctx context.Context, params GetAllOrdersParams) ([]model.Log, error) {
+	res := []model.Log{}
+
+	orders, err := u.OrderRepo.GetAllLogsByID(ctx, orders.GetAllOrdersParams{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, o := range orders {
+		res = append(res, model.Log{
+			Order: model.Order{
+				OrderID:              o.Order.OrderID,
+				OrderDate:            o.Order.OrderDate,
+				CustomerID:           o.Order.CustomerID,
+				NetAmount:            o.NetAmount,
+				Tax:                  o.Tax,
+				TotalAmount:          o.TotalAmount,
+				OrderLineID:          o.OrderLineID,
+				ProdID:               o.Product.ProdID,
+				Quantity:             o.Quantity,
+				Category:             o.Product.Category,
+				Title:                o.Title,
+				Actor:                o.Actor,
+				Price:                o.Price,
+				Special:              o.Special,
+				CommonProdID:         o.CommonProdID,
+				CategoryName:         o.CategoryName,
+				FirstName:            o.FirstName,
+				LastName:             o.LastName,
+				Address1:             o.Address1,
+				Address2:             o.Address2,
+				City:                 o.City,
+				State:                o.State,
+				Zip:                  o.Zip,
+				Country:              o.Country,
+				Region:               o.Region,
+				Email:                o.Email,
+				Phone:                o.Phone,
+				CreditCardType:       o.CreditCardType,
+				CreditCard:           o.CreditCard,
+				CreditCardExpiration: o.CreditCardExpiration,
+				Username:             o.Username,
+				Password:             o.Password,
+				Age:                  o.Age,
+				Income:               o.Income,
+				Gender:               o.Gender,
+			},
+		})
+	}
+
+	return res, nil
+}
+
+func (u *settlementsUsecase) GetLogsChan(ctx context.Context, params GetAllOrdersParams) (chan model.Log, error) {
+
+	params.Validate()
+	resChan := make(chan model.Log)
+	go func() {
+		for {
+
+			orders, err := u.OrderRepo.GetAllLogsByIDChunk(ctx, orders.GetAllOrdersParams{
+				Limit:  params.Limit,
+				Offset: params.Offset,
+			})
+
+			params.Offset += len(orders)
+			if err != nil {
+				close(resChan)
+			}
+
+			if len(orders) == 0 {
+				close(resChan)
+				break
+			}
+
+			for _, o := range orders {
+				resChan <- model.Log{
+					Order: model.Order{
+						OrderID:              o.Order.OrderID,
+						OrderDate:            o.Order.OrderDate,
+						CustomerID:           o.Order.CustomerID,
+						NetAmount:            o.NetAmount,
+						Tax:                  o.Tax,
+						TotalAmount:          o.TotalAmount,
+						OrderLineID:          o.OrderLineID,
+						ProdID:               o.Product.ProdID,
+						Quantity:             o.Quantity,
+						Category:             o.Product.Category,
+						Title:                o.Title,
+						Actor:                o.Actor,
+						Price:                o.Price,
+						Special:              o.Special,
+						CommonProdID:         o.CommonProdID,
+						CategoryName:         o.CategoryName,
+						FirstName:            o.FirstName,
+						LastName:             o.LastName,
+						Address1:             o.Address1,
+						Address2:             o.Address2,
+						City:                 o.City,
+						State:                o.State,
+						Zip:                  o.Zip,
+						Country:              o.Country,
+						Region:               o.Region,
+						Email:                o.Email,
+						Phone:                o.Phone,
+						CreditCardType:       o.CreditCardType,
+						CreditCard:           o.CreditCard,
+						CreditCardExpiration: o.CreditCardExpiration,
+						Username:             o.Username,
+						Password:             o.Password,
+						Age:                  o.Age,
+						Income:               o.Income,
+						Gender:               o.Gender,
+					},
+				}
+			}
+
+		}
+	}()
+
+	return resChan, nil
+}
+
+func (u *settlementsUsecase) GetLogsPaginate(ctx context.Context, params GetAllOrdersParams) ([]model.Log, error) {
+	res := []model.Log{}
+
+	params.Validate()
+
+	orders, err := u.OrderRepo.GetAllLogPaginate(ctx, orders.GetAllOrdersParams{Limit: params.Limit, Offset: params.Offset})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, o := range orders {
+		res = append(res, model.Log{
+			Order: model.Order{
+				OrderID:              o.Order.OrderID,
+				OrderDate:            o.Order.OrderDate,
+				CustomerID:           o.Order.CustomerID,
+				NetAmount:            o.NetAmount,
+				Tax:                  o.Tax,
+				TotalAmount:          o.TotalAmount,
+				OrderLineID:          o.OrderLineID,
+				ProdID:               o.Product.ProdID,
+				Quantity:             o.Quantity,
+				Category:             o.Product.Category,
+				Title:                o.Title,
+				Actor:                o.Actor,
+				Price:                o.Price,
+				Special:              o.Special,
+				CommonProdID:         o.CommonProdID,
+				CategoryName:         o.CategoryName,
+				FirstName:            o.FirstName,
+				LastName:             o.LastName,
+				Address1:             o.Address1,
+				Address2:             o.Address2,
+				City:                 o.City,
+				State:                o.State,
+				Zip:                  o.Zip,
+				Country:              o.Country,
+				Region:               o.Region,
+				Email:                o.Email,
+				Phone:                o.Phone,
+				CreditCardType:       o.CreditCardType,
+				CreditCard:           o.CreditCard,
+				CreditCardExpiration: o.CreditCardExpiration,
+				Username:             o.Username,
+				Password:             o.Password,
+				Age:                  o.Age,
+				Income:               o.Income,
+				Gender:               o.Gender,
+			},
+		})
+	}
+
+	return res, nil
+}

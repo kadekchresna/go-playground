@@ -10,6 +10,7 @@ import (
 	"basic.web/config"
 	driver_db "basic.web/driver/db"
 	"basic.web/helper/logger"
+	echopprof "basic.web/helper/pprof"
 	orderRepo "basic.web/internal/repository/orders"
 	settlementsRepo "basic.web/internal/repository/settlements"
 	settlementsUc "basic.web/internal/usecase/settlements"
@@ -80,18 +81,10 @@ func run() {
 
 	e.Any("/metrics", echo.WrapHandler(promhttp.Handler()))
 
-	go func() {
-		log.Println(http.ListenAndServe(":6060", nil))
-	}()
-
 	// Register all the standard library debug endpoints.
-	// curl --output pprofile "localhost:8080/debug/pprof/profile?seconds=10
-	// go tool pprof -http localhost:3435 pprofile
-	// e.Any("/debug/pprof/", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
-	// e.Any("/debug/pprof/cmdline", echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
-	// e.Any("/debug/pprof/profile", echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
-	// e.Any("/debug/pprof/symbol", echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
-	// e.Any("/debug/pprof/trace", echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
+	// curl --output pprofile "http://127.0.0.1:50218/debug/pprof/profile?seconds=100"
+	// go tool pprof -http localhost:5432 pprofile
+	echopprof.RegisterPprofRoutes(e)
 	s := http.Server{
 		Addr:    fmt.Sprintf(":%d", config.AppPort),
 		Handler: e,

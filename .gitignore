@@ -2,3 +2,4 @@
 __debug*
 basic-web
 pprofile
+basic-web-server/deploy/data/*
