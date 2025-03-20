@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/basic-web-server",
+            "program": "${workspaceFolder}/array/addition-to-array",
             "args": ["web"]
         }
     ]
