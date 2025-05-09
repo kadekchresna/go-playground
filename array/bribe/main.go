@@ -35,17 +35,28 @@ func main() {
 // }
 
 func minimumBribes(q []int32) {
-	// var bribes int32
+	var bribes int32
 
-	// for i := len(q); i > 0 ; i-- {
+	var maxValue int32 = int32(len(q))
+	for i := maxValue - 1; i >= 0; i-- {
 
-	// }
+		if q[i] != i+1 {
+			if i-1 >= 0 && q[i-1] == i+1 {
+				bribes++
+				q[i], q[i-1] = q[i-1], q[i]
 
-	for i := 0; ; i-- {
+			} else if i-2 >= 0 && q[i-2] == i+1 {
+				bribes += 2
+				q[i-2] = q[i-1]
+				q[i-1] = q[i]
+				q[i] = i - 1
+			} else {
+				fmt.Println("Too chaotic")
+				return
 
-		fmt.Println(i)
-		if i < -20 {
-			break
+			}
 		}
 	}
+
+	fmt.Println(bribes)
 }
